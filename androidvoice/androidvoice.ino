@@ -1,8 +1,3 @@
-
-#include <SoftwareSerial.h>
-//SoftwareSerial BTserial(2, 3); // RX | TX
-// Connect the HC-06 TX to the Arduino RX on pin 2. 
-// Connect the HC-06 RX to the Arduino TX on pin 3 through a voltage divider.
 typedef struct{
   int sala[3] = {/*pinos R G B aqui*/};
   int quarto[3] = {/*pinos R G B aqui*/};
@@ -21,13 +16,12 @@ void Ligar(String* voice, int count);
 void Desligar(String* voice, int count);
 boolean ComodoTemDuasPalavras(String* voice, int count);
 char ObterCor(String* voice, boolean check);
-int ObterPinos(int* RGB, String lugar);
-void LigarCor(int* RGB, int cor);
+int ObterPinos(short int* RGB, String lugar);
+void LigarCor(short int* RGB, int cor);
 
 void setup() 
 {
     Serial.begin(9600);
-    Serial.println("Enter AT commands:");
     for(int i = 1; i < 13; i++)
     {
         pinMode(i, OUTPUT);
@@ -38,7 +32,6 @@ void setup()
 void loop() 
 {
   int count = 0;
-  /*
   while ( Serial.available() )     //Checa se existe algo pra ler
   {   
       delay(10);                   //Delay pra não dar merda
@@ -54,15 +47,15 @@ void loop()
       {
           voice[count] += c;       // Se não for nada disso, adiciona o char lido a string da palavra.
       }
-  }  */
-  //testing
-    voice[1]="ligar";            //Reseta Variavel
+  }
+  /*    //testing
+    voice[1]="ligar";
     voice[2]="sala"; 
     voice[3]="azul"; 
     voice[4]=""; 
     voice[5]="";
     count = 3;
-  //testing
+  */
 
 
   
@@ -71,11 +64,11 @@ void loop()
     Serial.println(voice[1]);
     if(voice[1] == "*ligar" && count>=3) 
     {
-      Ligar(voice, count);
+      Ligar(voice, count); //Liga o(s) LED de acordo com os parametros passado por voz (comodo, cor, intensidade)
     }
     if(voice[1] == "*desligar" && count==2)
     {
-      Desligar(voice, count);
+      Desligar(voice, count); //Liga o LED respectivo ao comodo.
     }
     
     voice[1]="";            //Reseta Variavel
@@ -87,19 +80,19 @@ void loop()
 }
 void Ligar(String* voice, int count)
 {
-    boolean check = ComodoTemDuasPalavras(voice, count);
+    boolean check = ComodoTemDuasPalavras(voice, count); //Checa se o nome do comodo tem 2 palavras
     String lugar;
     short int RGB[42];
     char cor;
     if(check == true)
-        lugar = voice[2] + " " + voice[3]; 
+        lugar = voice[2] + " " + voice[3]; //Concatena as duas palavras do nome do comodo
     else
         lugar = voice[4];
-    cor = ObterCor(voice, check);
+    cor = ObterCor(voice, check); // Obter um char que representa a cor, podendo ser R, G,B, C, M ou Y.
     if(cor == 'Z')
         return;
-    ObterPinos(RGB, lugar);
-    LigarCor(RGB, cor);
+    ObterPinos(RGB, lugar); // Obtem os pinos referentes ao comodo.
+    LigarCor(RGB, cor); // Funcao que liga os pinos dependendo da cor que se deseja obter do LED RGB.
 }
 
 void Desligar(String* voice, int count)
@@ -114,7 +107,7 @@ void Desligar(String* voice, int count)
     ObterPinos(RGB, lugar);
     short int tam = sizeof(RGB)/sizeof(short int);
     short int i;
-    for(i = 1; i <= tam; i+=3 ){
+    for(i = 1; i <= tam; i+=3 ){ //Desliga todos os LED dos pinos recebidos.
       digitalWrite(RGB[i], LOW);
       digitalWrite(RGB[i+1], LOW);
       digitalWrite(RGB[i+2], LOW);
@@ -281,11 +274,11 @@ void LigarCor(short int* RGB, int cor)
       digitalWrite(RGB[i+2], LOW);
     }
   }
-  else if(cor == 'Y'){
+  else if(cor == 'W'){
     for(i = 1; i <= tam; i+=3 ){
       digitalWrite(RGB[i], HIGH);
       digitalWrite(RGB[i+1], HIGH);
-      digitalWrite(RGB[i+2], LOW);
+      digitalWrite(RGB[i+2], HIGH);
     }
   }
 }
