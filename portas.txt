@@ -2,9 +2,8 @@ Corredor1:R=30;G=28;B=26;pwm=4;botao=22; //Ambos LEDs dos corredores serão
 Corredor2:R=31;G=29;B=27;pwm=5;botao=22; //ligados ao mesmo tempo
 quarto:R=36;G=34;B=32;pwm=6;botao=23;
 
-sala:R=37;G=35;B=33;pwm=7;botao=24;
-
-cozinha:R=38;G=40;B=42;pwm=8;botao=25;
+cozinha:R=37;G=35;B=33;pwm=7;botao=24;
+sala:R=38;G=40;B=42;pwm=8;botao=25;
 
 quartofernando:R=44;G=46;B=48;pwm=9;botao=50;
 
