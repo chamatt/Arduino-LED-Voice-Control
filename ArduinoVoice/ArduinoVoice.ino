@@ -1,4 +1,5 @@
 //Comodos
+/*
 int corredor1[4] = {30, 28, 26, 4};
 int corredor2[4] = {31, 29, 27, 5};
 int quarto[4] = {36, 34, 32, 6};
@@ -7,6 +8,15 @@ int sala[4] = {38, 40, 42, 8};
 int quartofernando[4] = {44, 46, 48, 9};
 int banheirofernando[4] = {39, 41, 43, 10};
 int lavabo[4] = {45, 47, 49, 11};
+*/
+int corredor1[4] = {38, 40, 42, 8};
+int corredor2[4] = {31, 29, 27, 5};
+int quarto[4] = {45, 47, 49, 11};
+int cozinha[4] = {39, 41, 43, 10};
+int sala[4] = {36, 34, 32, 6};
+int quartofernando[4] = {30, 28, 26, 4};
+int banheirofernando[4] = {37, 35, 33, 7};
+int lavabo[4] = {44, 46, 48, 9};
 
 typedef struct{
   int pino;
@@ -29,15 +39,17 @@ tBotoes botoes;
 
 
 String voice[5];
+//int WakeUp = 53;
+
 
 void InicializaBotoes(tBotoes *botoes);
 void Ligar(String* voice, int count);
 void Desligar(String* voice, int count);
 boolean ComodoTemDuasPalavras(String* voice, int count);
 char ObterCor(String* voice, boolean check);
-int ObterPinos(short int* RGB, short int* PWM, String lugar);
+int ObterPinos(short int* RGB, short int* source, String lugar);
 void LigarCor(short int* RGB, char cor, short int tam);
-void LigaIntensidade(short int* PWM, String* voice, boolean check, int count, short int tam);
+void LigaIntensidade(short int* source, String* voice, boolean check, int count, short int tam);
 void ChecarBotoes(tBotoes *botoes);
 
 void setup() 
@@ -62,11 +74,15 @@ void setup()
         pinMode(i, OUTPUT);
     }
 
-    //Seta os PWM
+    //Seta os source
     for(int i = 4; i <= 11; i++)
     {
         pinMode(i, OUTPUT);
     }    
+    //pinMode(WakeUp, OUTPUT);
+    //digitalWrite(WakeUp, HIGH);
+
+    
 }
  
 void loop() 
@@ -89,29 +105,29 @@ void loop()
       }
   }
   count++;
-  /*    //testing
-    voice[0]="ligar";
-    voice[1]="sala"; 
-    voice[2]="azul"; 
+    /*  //testing
+    voice[0]="*ligar";
+    voice[1]="perigo"; 
+    voice[2]=""; 
     voice[3]=""; 
     voice[4]="";
-    count = 3;
-  */
+    count = 2;
+    */
   if (voice[1].length() > 0) 
   {
     String tudo = "Recebibo: "+ voice[0] + " " + voice[1] + " " + voice[2] + " " + voice[3] + " " + voice[4]; 
     Serial.println(tudo);
-    if(voice[0] == "*ligar" && count>=3) 
+    if(voice[0] == "*ligar" && count>=2) 
     {
-      Serial.println("Entrou no caralho do if de ligar");
+      Serial.println("Ativou Comando de Ligar");
       Ligar(voice, count); //Liga o(s) LED de acordo com os parametros passado por voz (comodo, cor, intensidade)
     }
     if(voice[0] == "*desligar" && count==2)
     {
-      Serial.println("Entrou no caralho do if de desligar");
+      Serial.println("Ativou Comando de Desligar");
       Desligar(voice, count); //Liga o LED respectivo ao comodo.
     }
-    
+    Serial.println();
     voice[0]="";            //Reseta Variavel
     voice[1]=""; 
     voice[2]=""; 
@@ -124,25 +140,25 @@ void loop()
 void Ligar(String* voice, int count)
 {
     boolean check = ComodoTemDuasPalavras(voice, count); //Checa se o nome do comodo tem 2 palavras
-    String printcheck = "tem dois comodos?" + check;
-    Serial.println(printcheck);
     String lugar;
     short int RGB[42];
-    short int PWM[14]; 
+    short int source[14]; 
     char cor;
     if(check == true)
         lugar = voice[1] + " " + voice[2]; //Concatena as duas palavras do nome do comodo
     else
         lugar = voice[1];
-    String printlugar = "string com nome do lugar: " + lugar;
+    String printlugar = "Local recebido: " + lugar;
     Serial.println(printlugar);
+    int tam;
+    tam = ObterPinos(RGB, source, lugar); // Obtem os pinos referentes ao comodo.
+    if(tam == 0)
+      return;
     cor = ObterCor(voice, check); // Obter um char que representa a cor, podendo ser R, G,B, C, M ou Y.
     if(cor == 'Z')
         return;
-    short int tam;
-    tam = ObterPinos(RGB, PWM, lugar); // Obtem os pinos referentes ao comodo.
     LigarCor(RGB, cor, tam); // Funcao que liga os pinos dependendo da cor que se deseja obter do LED RGB.
-    LigaIntensidade(PWM, voice, check, count, tam);
+    LigaIntensidade(source, voice, check, count, tam);
 }
 
 void Desligar(String* voice, int count)
@@ -150,27 +166,30 @@ void Desligar(String* voice, int count)
     boolean check = ComodoTemDuasPalavras(voice, count);
     String lugar;
     short int RGB[42];
-    short int tam;
-    short int PWM[14];
+    int tam;
+    short int source[14];
     if(check == true)
         lugar = voice[1] + " " + voice[2]; 
     else
-        lugar = voice[3];
-    String printlugar = "string com nome do lugar: " + lugar;
+        lugar = voice[1];
+    String printlugar = "Local recebido: " + lugar;
     Serial.println(printlugar);
-    tam = ObterPinos(RGB, PWM, lugar);
+    tam = ObterPinos(RGB, source, lugar);
+    if(tam == 0)
+      return;
+    Serial.println(tam);
     short int i, j;
     for(i = 0, j = 0; i < tam; i+=3, j++){ //Desliga todos os LED dos pinos recebidos.
       digitalWrite(RGB[i], LOW);
       digitalWrite(RGB[i+1], LOW);
       digitalWrite(RGB[i+2], LOW);
-      analogWrite(PWM[j], 0);
-      Serial.println("Desativou LED Pino PWM:");
-      Serial.println(PWM[j]);
-      Serial.println("Pinos RGB:");
-      Serial.println(RGB[i]);
-      Serial.println(RGB[i+1]);
-      Serial.println(RGB[i+2]);
+      analogWrite(source[j], 0);
+      //Serial.println("Desativou LED Pino source:");
+      //Serial.println(source[j]);
+      //Serial.println("Pinos RGB:");
+      //Serial.println(RGB[i]);
+      //Serial.println(RGB[i+1]);
+      //Serial.println(RGB[i+2]);
    }
 }
 
@@ -204,14 +223,16 @@ char ObterCor(String* voice, boolean check)
         return 'M';
     if(voice[pos] == "amarelo")
         return 'Y';
+    if(voice[pos-1] == "perigo")
+        return 'P';
     else
         return 'Z';
 }
 
 
-int ObterPinos(short int* RGB, short int* PWM, String lugar)
+int ObterPinos(short int* RGB, short int* source, String lugar)
 {
-  Serial.println("Comodo do pino recebido:");
+  Serial.write("Comodo do pino recebido: ");
   if(lugar == "corredor"){
     RGB[0] = corredor1[0]; 
     RGB[1] = corredor1[1];
@@ -220,8 +241,8 @@ int ObterPinos(short int* RGB, short int* PWM, String lugar)
     RGB[4] = corredor2[1];
     RGB[5] = corredor2[2];
     
-    PWM[0] = corredor1[3];
-    PWM[1] = corredor2[3];
+    source[0] = corredor1[3];
+    source[1] = corredor2[3];
     Serial.println("Corredor");
     return 6;
   }
@@ -229,7 +250,7 @@ int ObterPinos(short int* RGB, short int* PWM, String lugar)
     RGB[0] = lavabo[0]; 
     RGB[1] = lavabo[1];
     RGB[2] = lavabo[2];
-    PWM[0] = lavabo[3];
+    source[0] = lavabo[3];
     Serial.println("Lavabo");
     return 3;
     
@@ -238,7 +259,7 @@ int ObterPinos(short int* RGB, short int* PWM, String lugar)
     RGB[0] = cozinha[0]; 
     RGB[1] = cozinha[1];
     RGB[2] = cozinha[2];
-    PWM[0] = cozinha[3];
+    source[0] = cozinha[3];
     Serial.println("Cozinha");
     return 3;
     
@@ -247,7 +268,7 @@ int ObterPinos(short int* RGB, short int* PWM, String lugar)
     RGB[0] = sala[0]; 
     RGB[1] = sala[1];
     RGB[2] = sala[2];
-    PWM[0] = sala[3];
+    source[0] = sala[3];
     Serial.println("Sala");
     return 3;
   }
@@ -255,7 +276,7 @@ int ObterPinos(short int* RGB, short int* PWM, String lugar)
     RGB[0] = banheirofernando[0]; 
     RGB[1] = banheirofernando[1];
     RGB[2] = banheirofernando[2];
-    PWM[0] = banheirofernando[3];
+    source[0] = banheirofernando[3];
     Serial.println("Banheiro fernando");
     return 3;
   }
@@ -263,7 +284,7 @@ int ObterPinos(short int* RGB, short int* PWM, String lugar)
     RGB[0] = quartofernando[0]; 
     RGB[1] = quartofernando[1];
     RGB[2] = quartofernando[2];
-    PWM[0] = quartofernando[3];
+    source[0] = quartofernando[3];
     Serial.println("Quarto fernando");
     return 3;
   }
@@ -271,11 +292,11 @@ int ObterPinos(short int* RGB, short int* PWM, String lugar)
     RGB[0] = quarto[0]; 
     RGB[1] = quarto[1];
     RGB[2] = quarto[2];
-    PWM[0] = quarto[3];
+    source[0] = quarto[3];
     Serial.println("Quarto");
     return 3;
   }
-   else if(lugar == "todos"){
+   else if(lugar == "todos" || lugar == "perigo"){
     RGB[0] = corredor1[0]; 
     RGB[1] = corredor1[1];
     RGB[2] = corredor1[2];
@@ -301,23 +322,28 @@ int ObterPinos(short int* RGB, short int* PWM, String lugar)
     RGB[22] = quarto[1];
     RGB[23] = quarto[2];
 
-    PWM[0] = corredor1[3]; 
-    PWM[1] = corredor2[3]; 
-    PWM[2] = lavabo[3]; 
-    PWM[3] = cozinha[3]; 
-    PWM[4] = sala[3]; 
-    PWM[5] = banheirofernando[3];
-    PWM[6] = quartofernando[3];
-    PWM[7] = quarto[3];
+    source[0] = corredor1[3]; 
+    source[1] = corredor2[3]; 
+    source[2] = lavabo[3]; 
+    source[3] = cozinha[3]; 
+    source[4] = sala[3]; 
+    source[5] = banheirofernando[3];
+    source[6] = quartofernando[3];
+    source[7] = quarto[3];
     Serial.println("Todos");
     return 24;
   }
+  else{
+      Serial.println("Nenhum - Para o Programa");
+      return 0;
+  }
+   
 }
 
 void LigarCor(short int* RGB, char cor, short int tam)
 {
   short int i;
-  Serial.println("Cor que sera ativada:");
+  Serial.write("Cor que sera ativada: ");
   if(cor == 'R'){
     for(i = 0; i < tam; i+=3){
       digitalWrite(RGB[i], HIGH);
@@ -374,42 +400,55 @@ void LigarCor(short int* RGB, char cor, short int tam)
     }
     Serial.println("Branco");
   }
+  else if(cor == 'P'){
+    for(i = 0; i < 6; i+=3 ){
+      digitalWrite(RGB[i], LOW);
+      digitalWrite(RGB[i+1], HIGH);
+      digitalWrite(RGB[i+2], LOW);
+    }
+    for(i = 6; i < tam; i+=3 ){
+      digitalWrite(RGB[i], HIGH);
+      digitalWrite(RGB[i+1], LOW);
+      digitalWrite(RGB[i+2], LOW);
+    }
+    Serial.println("Perigo");
+  }
 }
-void LigaIntensidade(short int* PWM, String* voice, boolean check, int count, short int tam)
+void LigaIntensidade(short int* source, String* voice, boolean check, int count, short int tam)
 {
-    Serial.println("Intensidade do negocio:");
+    Serial.write("Intensidade: ");
     short int i;
     if( (check && count == 4) || (!check && count == 3) ) // intensidade não especificada -> forte
     { 
         for(i = 0; i < tam/3; i++){
-            analogWrite(PWM[i], 0);
+            analogWrite(source[i], 0);
         }
-        Serial.println("*Forte*: AnalogWrite(pwm, 0)");
+        Serial.println("*Forte*");
     }
     else if(count == 4 || count == 5 )                   // intensidade especificada -> forte
     {
       if(voice[count-1] == "forte")
       {
         for(i = 0; i < tam/3; i++){
-            analogWrite(PWM[i], 0);
+            analogWrite(source[i], 0);
         }
-        Serial.println("*Forte*: AnalogWrite(pwm, 0)");
+        Serial.println("*Forte*");
       }
       else if(voice[count-1] == "fraco")
       {
         for(i = 0; i < tam/3; i++)
         {
-            analogWrite(PWM[i], 127);
+            analogWrite(source[i], 127);
         }
-        Serial.println("*fraco*: AnalogWrite(pwm, 127)");
+        Serial.println("*Fraco*");
       }
       else if(voice[count-1] == "escuro")
       {
         for(i = 0; i < tam/3; i++)
         {
-            analogWrite(PWM[i], 200);
+            analogWrite(source[i], 200);
         }
-        Serial.println("*escuro*: AnalogWrite(pwm, 200)");
+        Serial.println("*Escuro*");
       }
     }
 }
